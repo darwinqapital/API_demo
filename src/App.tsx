@@ -45,7 +45,61 @@ function reducer(state: AppState, action: Action): AppState {
   }
 }
 
+const PASS_KEY = 'wedbush_demo_authed'
+
+function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
+  const [value, setValue] = useState('')
+  const [error, setError] = useState(false)
+  const [shaking, setShaking] = useState(false)
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (value.trim().toLowerCase() === 'pumpernickel') {
+      try { sessionStorage.setItem(PASS_KEY, '1') } catch {}
+      onUnlock()
+    } else {
+      setError(true)
+      setShaking(true)
+      setTimeout(() => setShaking(false), 500)
+    }
+  }
+
+  return (
+    <div className="password-gate">
+      <form className={`password-card${shaking ? ' password-card--shake' : ''}`} onSubmit={handleSubmit}>
+        <div className="password-card__icon" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </div>
+        <h1 className="password-card__title">Wedbush Pillar Platform</h1>
+        <p className="password-card__subtitle">Enter the password to access the demo</p>
+        <div className={`password-card__field${error ? ' password-card__field--error' : ''}`}>
+          <input
+            className="password-card__input"
+            type="password"
+            value={value}
+            onChange={(e) => { setValue(e.target.value); setError(false) }}
+            placeholder="Password\u2026"
+            autoComplete="off"
+            spellCheck={false}
+            autoFocus
+          />
+        </div>
+        {error && <p className="password-card__error" role="alert">Incorrect password</p>}
+        <button className="password-card__submit" type="submit">
+          Continue
+        </button>
+      </form>
+    </div>
+  )
+}
+
 export function App() {
+  const [authed, setAuthed] = useState(() => {
+    try { return sessionStorage.getItem(PASS_KEY) === '1' } catch { return false }
+  })
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const [announcement, setAnnouncement] = useState('')
   const prevCompletedRef = useRef(state.completedStages.length)
@@ -65,6 +119,10 @@ export function App() {
     }
     prevCompletedRef.current = state.completedStages.length
   }, [state.completedStages])
+
+  if (!authed) {
+    return <PasswordGate onUnlock={() => setAuthed(true)} />
+  }
 
   return (
     <div className="demo-layout">

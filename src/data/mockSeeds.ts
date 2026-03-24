@@ -46,6 +46,35 @@ export const EVENT_CONTRACTS_LIST: EventContractInfo[] = [
   { id: 'ec-4', question: 'Will US GDP growth exceed 3% in 2026?', category: 'Economy', yesPrice: '0.38', noPrice: '0.62', expiresAt: '2026-12-31' },
 ]
 
+export const DEMO_PERSONAL_INFO = {
+  firstName: 'Alex',
+  middleName: 'J',
+  lastName: 'Morgan',
+  suffix: '',
+  tin: '123-45-6789',
+  dateOfBirth: '1990-06-15',
+  countryOfLegalResidence: 'USA',
+  email: 'alex.morgan@example.com',
+  phone: '+1 (212) 555-0147',
+  addressLine1: '350 Fifth Avenue',
+  city: 'New York',
+  state: 'US-NY',
+  zip: '10118',
+} as const
+
+export const DEMO_SUITABILITY_INFO = {
+  employmentType: 'EMPLOYED',
+  occupation: 'Product Manager',
+  typeOfBusiness: 'INFORMATION',
+  employer: 'Acme Technologies',
+  businessPhone: '+1 (212) 555-0200',
+  businessAddress: '350 Fifth Avenue, New York, NY',
+  liquidNetWorth: '250000',
+  totalNetWorth: '500000',
+  investmentObjective: 'GROWTH',
+  riskTolerance: 'MODERATE',
+} as const
+
 export const US_STATES = [
   { value: 'US-AL', label: 'Alabama' }, { value: 'US-AK', label: 'Alaska' },
   { value: 'US-AZ', label: 'Arizona' }, { value: 'US-AR', label: 'Arkansas' },

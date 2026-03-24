@@ -6,9 +6,10 @@ interface Props {
   children: ReactNode
   footer?: ReactNode
   onBack?: () => void
+  headerAction?: ReactNode
 }
 
-export function PhoneFrame({ title, subtitle, children, footer, onBack }: Props) {
+export function PhoneFrame({ title, subtitle, children, footer, onBack, headerAction }: Props) {
   return (
     <div className="phone-frame" role="region" aria-label={title}>
       <div className="phone-frame__header">
@@ -26,6 +27,7 @@ export function PhoneFrame({ title, subtitle, children, footer, onBack }: Props)
         )}
         <h2 className="phone-frame__title">{title}</h2>
         {subtitle && <p className="phone-frame__subtitle">{subtitle}</p>}
+        {headerAction && <div className="phone-frame__action">{headerAction}</div>}
       </div>
       <div className="phone-frame__body">{children}</div>
       {footer && <div className="phone-frame__footer">{footer}</div>}

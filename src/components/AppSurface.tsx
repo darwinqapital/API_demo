@@ -21,6 +21,8 @@ import {
   NET_WORTH_RANGES,
   INVESTMENT_OBJECTIVES,
   RISK_TOLERANCES,
+  DEMO_PERSONAL_INFO,
+  DEMO_SUITABILITY_INFO,
 } from '../data/mockSeeds'
 
 interface Props {
@@ -62,6 +64,30 @@ function SuccessButton({ label }: { label: string }) {
       </svg>
       {label}
     </button>
+  )
+}
+
+function AutoFillToggle({
+  enabled,
+  onToggle,
+}: {
+  enabled: boolean
+  onToggle: (on: boolean) => void
+}) {
+  return (
+    <label className={`autofill-toggle${enabled ? ' autofill-toggle--on' : ''}`}>
+      <input
+        type="checkbox"
+        className="autofill-toggle__input"
+        checked={enabled}
+        onChange={(e) => onToggle(e.target.checked)}
+        aria-label="Auto-fill demo data"
+      />
+      <span className="autofill-toggle__label">Auto-fill</span>
+      <span className="autofill-toggle__track" aria-hidden="true">
+        <span className="autofill-toggle__thumb" />
+      </span>
+    </label>
   )
 }
 
@@ -154,6 +180,15 @@ function PersonalInfoStep({ state, dispatch }: Props) {
   const info = state.personalInfo
   const [errors, setErrors] = useState<Partial<Record<keyof PersonalInfo, string>>>({})
   const [submitted, setSubmitted] = useState(false)
+  const [autoFill, setAutoFill] = useState(false)
+
+  const handleAutoFill = (on: boolean) => {
+    setAutoFill(on)
+    if (on) {
+      dispatch({ type: 'SET_PERSONAL_INFO', info: { ...DEMO_PERSONAL_INFO } })
+      setErrors({})
+    }
+  }
 
   const update = (field: keyof PersonalInfo, value: string) => {
     dispatch({ type: 'SET_PERSONAL_INFO', info: { ...info, [field]: value } })
@@ -194,6 +229,7 @@ function PersonalInfoStep({ state, dispatch }: Props) {
       title="Personal Information"
       subtitle="Tell us about yourself"
       onBack={() => dispatch({ type: 'SET_STAGE', stage: 'choose-accounts' })}
+      headerAction={<AutoFillToggle enabled={autoFill} onToggle={handleAutoFill} />}
       footer={
         <ActionButton
           onClick={handleSubmit}
@@ -287,6 +323,15 @@ function SuitabilityStep({ state, dispatch }: Props) {
   const info = state.suitabilityInfo
   const [errors, setErrors] = useState<Partial<Record<keyof SuitabilityInfo, string>>>({})
   const [submitted, setSubmitted] = useState(false)
+  const [autoFill, setAutoFill] = useState(false)
+
+  const handleAutoFill = (on: boolean) => {
+    setAutoFill(on)
+    if (on) {
+      dispatch({ type: 'SET_SUITABILITY_INFO', info: { ...DEMO_SUITABILITY_INFO } })
+      setErrors({})
+    }
+  }
 
   const update = (field: keyof SuitabilityInfo, value: string) => {
     dispatch({ type: 'SET_SUITABILITY_INFO', info: { ...info, [field]: value } })
@@ -359,6 +404,7 @@ function SuitabilityStep({ state, dispatch }: Props) {
       title="Investment Profile"
       subtitle="Required for regulatory compliance"
       onBack={() => dispatch({ type: 'SET_STAGE', stage: 'personal-info' })}
+      headerAction={<AutoFillToggle enabled={autoFill} onToggle={handleAutoFill} />}
       footer={
         <ActionButton
           onClick={handleSubmit}
