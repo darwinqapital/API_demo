@@ -1,15 +1,16 @@
-import { STAGES, type DemoStage } from '../types/wedbush'
+import { type StageInfo, type DemoStage } from '../types/wedbush'
 
 interface Props {
+  stages: StageInfo[]
   currentStage: DemoStage
   completedStages: DemoStage[]
   onStageClick: (stage: DemoStage) => void
 }
 
-export function StoryProgress({ currentStage, completedStages, onStageClick }: Props) {
+export function StoryProgress({ stages, currentStage, completedStages, onStageClick }: Props) {
   return (
     <nav className="story-progress" aria-label="Demo stages">
-      {STAGES.map((stage, i) => {
+      {stages.map((stage, i) => {
         const isActive = stage.id === currentStage
         const isCompleted = completedStages.includes(stage.id)
         const cls = [

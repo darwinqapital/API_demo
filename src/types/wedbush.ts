@@ -1,7 +1,14 @@
 export type AccountTypeChoice = 'EVENT_CONTRACTS' | 'FINTECH_RETAIL' | 'CRYPTO'
 
+export type DemoMode = 'mobile-app' | 'news-reel'
+
+export type ThemePresetId = 'blue' | 'emerald' | 'violet' | 'rose' | 'orange' | 'slate'
+
 export type DemoStage =
+  | 'demo-setup'
   | 'choose-accounts'
+  | 'news-feed'
+  | 'news-reel-disclosure'
   | 'personal-info'
   | 'suitability'
   | 'deposit-funds'
@@ -19,6 +26,15 @@ export const STAGES: StageInfo[] = [
   { id: 'suitability', label: 'Suitability', description: 'Investment profile and KYC verification' },
   { id: 'deposit-funds', label: 'Fund Account', description: 'Deposit funds into your account' },
   { id: 'explore-markets', label: 'Explore', description: 'Browse stocks and event contracts' },
+]
+
+export const NEWS_REEL_STAGES: StageInfo[] = [
+  { id: 'news-feed', label: 'News Feed', description: 'Breaking news event' },
+  { id: 'news-reel-disclosure', label: 'Disclosure', description: 'Review and accept event contract risks' },
+  { id: 'personal-info', label: 'Personal Info', description: 'Enter your personal information' },
+  { id: 'suitability', label: 'Suitability', description: 'Investment profile and KYC verification' },
+  { id: 'deposit-funds', label: 'Fund Account', description: 'Deposit funds into your account' },
+  { id: 'explore-markets', label: 'Explore', description: 'Browse event contracts' },
 ]
 
 export interface ApiLogEntry {
@@ -98,6 +114,8 @@ export interface AppState {
   isProcessing: boolean
   apiLog: ApiLogEntry[]
 
+  partnerName: string
+  themePreset: ThemePresetId
   selectedAccountTypes: AccountTypeChoice[]
   personalInfo: PersonalInfo
   suitabilityInfo: SuitabilityInfo
@@ -112,11 +130,13 @@ export interface AppState {
 }
 
 export const INITIAL_STATE: AppState = {
-  currentStage: 'choose-accounts',
+  currentStage: 'demo-setup',
   completedStages: [],
   isProcessing: false,
   apiLog: [],
 
+  partnerName: '',
+  themePreset: 'blue',
   selectedAccountTypes: [],
   personalInfo: { ...EMPTY_PERSONAL_INFO },
   suitabilityInfo: { ...EMPTY_SUITABILITY_INFO },

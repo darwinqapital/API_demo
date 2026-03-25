@@ -22,10 +22,12 @@ export type Action =
   | { type: 'SET_PAYMENT_ACCOUNT_ID'; id: string }
   | { type: 'SET_BALANCE'; balance: string }
   | { type: 'SET_KYC_STATUS'; status: AppState['kycStatus'] }
+  | { type: 'SET_PARTNER_NAME'; partnerName: string }
+  | { type: 'SET_THEME_PRESET'; themePreset: AppState['themePreset'] }
   | { type: 'SET_SELECTED_ACCOUNT_TYPES'; types: AppState['selectedAccountTypes'] }
   | { type: 'SET_PERSONAL_INFO'; info: AppState['personalInfo'] }
   | { type: 'SET_SUITABILITY_INFO'; info: AppState['suitabilityInfo'] }
-  | { type: 'RESET' }
+  | { type: 'RESET'; stage?: DemoStage }
 
 function addLog(dispatch: Dispatch<Action>) {
   return (entry: ApiLogEntry) => dispatch({ type: 'ADD_LOG', entry })
@@ -45,6 +47,21 @@ export async function runChooseAccounts(
     dispatch({ type: 'SET_TOKEN', token: result.token })
     dispatch({ type: 'COMPLETE_STAGE', stage: 'choose-accounts' })
     dispatch({ type: 'SET_STAGE', stage: 'personal-info' })
+  } finally {
+    dispatch({ type: 'SET_PROCESSING', value: false })
+  }
+}
+
+export async function runNewsFeedScan(
+  dispatch: Dispatch<Action>,
+) {
+  dispatch({ type: 'SET_PROCESSING', value: true })
+  try {
+    dispatch({ type: 'SET_SELECTED_ACCOUNT_TYPES', types: ['EVENT_CONTRACTS'] })
+    const result = await simulateAuth(addLog(dispatch))
+    dispatch({ type: 'SET_TOKEN', token: result.token })
+    dispatch({ type: 'COMPLETE_STAGE', stage: 'news-feed' })
+    dispatch({ type: 'SET_STAGE', stage: 'news-reel-disclosure' })
   } finally {
     dispatch({ type: 'SET_PROCESSING', value: false })
   }

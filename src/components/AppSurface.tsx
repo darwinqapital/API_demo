@@ -2,6 +2,7 @@ import { type Dispatch, useState, useRef, useEffect } from 'react'
 import { PhoneFrame } from './PhoneFrame'
 import {
   runChooseAccounts,
+  runNewsFeedScan,
   runPersonalInfo,
   runSuitability,
   runDeposit,
@@ -9,12 +10,14 @@ import {
   type Action,
 } from '../sim/scenarioEngine'
 import type { OrderSizing } from '../sim/apiSimulator'
-import type { AppState, DemoStage, AccountTypeChoice, PersonalInfo, SuitabilityInfo } from '../types/wedbush'
+import type { AppState, DemoMode, DemoStage, AccountTypeChoice, PersonalInfo, SuitabilityInfo } from '../types/wedbush'
 import {
   MOCK_BANK,
   DEPOSIT_AMOUNT,
   STOCK_LIST,
   EVENT_CONTRACTS_LIST,
+  OIL_EVENT_CONTRACT,
+  THEME_PRESETS,
   US_STATES,
   EMPLOYMENT_TYPES,
   BUSINESS_TYPES,
@@ -24,10 +27,12 @@ import {
   DEMO_PERSONAL_INFO,
   DEMO_SUITABILITY_INFO,
 } from '../data/mockSeeds'
+import disclosureSample from '../../docs/Disclosures sample.md?raw'
 
 interface Props {
   state: AppState
   dispatch: Dispatch<Action>
+  demoMode?: DemoMode
 }
 
 // ─── Shared ───
@@ -88,6 +93,131 @@ function AutoFillToggle({
         <span className="autofill-toggle__thumb" />
       </span>
     </label>
+  )
+}
+
+function formatDisclosureCopy(partnerName: string) {
+  const platformName = partnerName.trim() || 'your platform'
+  return disclosureSample.split('[Insert Platform Name]').join(platformName)
+}
+
+function DemoSetupStep({ state, dispatch, demoMode = 'mobile-app' }: Props) {
+  const [submitted, setSubmitted] = useState(false)
+  const partnerName = state.partnerName
+  const startStage: DemoStage = demoMode === 'news-reel' ? 'news-feed' : 'choose-accounts'
+  const partnerError = submitted && !partnerName.trim() ? 'Partner name is required' : undefined
+
+  const handleContinue = () => {
+    setSubmitted(true)
+    if (!partnerName.trim()) return
+    dispatch({ type: 'SET_STAGE', stage: startStage })
+  }
+
+  return (
+    <PhoneFrame
+      title="Demo Setup"
+      subtitle="Set the partner name and theme before you begin."
+      footer={(
+        <ActionButton
+          onClick={handleContinue}
+          isProcessing={false}
+          label={`Start ${demoMode === 'news-reel' ? 'News Reel Demo' : 'Mobile App Journey'}`}
+        />
+      )}
+    >
+      <FormField label="Partner Name" error={partnerError} required>
+        <input
+          className="form-input"
+          name="partnerName"
+          value={partnerName}
+          onChange={(e) => dispatch({ type: 'SET_PARTNER_NAME', partnerName: e.target.value })}
+          autoComplete="organization"
+          placeholder="Acme Wealth…"
+          aria-invalid={partnerError ? 'true' : undefined}
+        />
+      </FormField>
+
+      <FormField label="Theme Color" required>
+        <select
+          className="form-select"
+          name="themePreset"
+          value={state.themePreset}
+          onChange={(e) => dispatch({ type: 'SET_THEME_PRESET', themePreset: e.target.value as AppState['themePreset'] })}
+        >
+          {THEME_PRESETS.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+      </FormField>
+
+      <div className="setup-summary" aria-live="polite">
+        <div className="setup-summary__label">Disclosure preview</div>
+        <p className="setup-summary__copy">
+          {`[Insert Platform Name] will appear as ${partnerName.trim() || 'your partner name'} in the disclosure step.`}
+        </p>
+      </div>
+    </PhoneFrame>
+  )
+}
+
+function NewsReelDisclosureStep({ state, dispatch }: Props) {
+  const [accepted, setAccepted] = useState(false)
+  const disclosureCopy = formatDisclosureCopy(state.partnerName)
+
+  const handleContinue = () => {
+    if (!accepted) return
+    dispatch({ type: 'COMPLETE_STAGE', stage: 'news-reel-disclosure' })
+    dispatch({ type: 'SET_STAGE', stage: 'personal-info' })
+  }
+
+  return (
+    <PhoneFrame
+      title="Risk Disclosure"
+      subtitle={`Review the event contract disclosure for ${state.partnerName.trim() || 'your partner'}.`}
+      onBack={() => dispatch({ type: 'SET_STAGE', stage: 'news-feed' })}
+      footer={(
+        <div className="disclosure-step__footer">
+          <label className="disclosure-step__checkbox">
+            <input
+              type="checkbox"
+              checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)}
+            />
+            <span>I have read and agree to the disclosure.</span>
+          </label>
+          <button
+            className="action-btn"
+            onClick={handleContinue}
+            disabled={!accepted}
+            type="button"
+            aria-describedby={!accepted ? 'disclosure-consent-note' : undefined}
+          >
+            Continue
+          </button>
+          {!accepted && (
+            <p className="disclosure-step__note" id="disclosure-consent-note">
+              Check the box to continue.
+            </p>
+          )}
+        </div>
+      )}
+    >
+      <div className="disclosure-step__content">
+        <p className="disclosure-step__intro">
+          Please review the disclosure below before continuing.
+        </p>
+        <div
+          className="disclosure-step__textbox"
+          role="region"
+          aria-label="Disclosure statement"
+          tabIndex={0}
+        >
+          {disclosureCopy}
+        </div>
+      </div>
+    </PhoneFrame>
   )
 }
 
@@ -530,6 +660,32 @@ function DepositStep({ state, dispatch }: Props) {
   )
 }
 
+// ─── News Feed Step (News Reel mode) ───
+
+function NewsFeedStep({ state, dispatch }: Props) {
+  return (
+    <div className="news-feed">
+      <div className="news-feed__container">
+        <img
+          className="news-feed__gif"
+          src="/news-reel.gif"
+          alt="Breaking news: Godzilla attacks oil tankers, oil prices surge"
+        />
+        <button
+          className="news-feed__qr-hotspot"
+          onClick={() => runNewsFeedScan(dispatch)}
+          disabled={state.isProcessing}
+          type="button"
+          aria-label="Scan QR code to open an Event Contracts account"
+        >
+          {state.isProcessing && <span className="spinner" aria-hidden="true" />}
+          <span className="news-feed__qr-hint">Tap to scan</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Step 5: Explore Markets ───
 
 type SelectedAsset =
@@ -727,9 +883,10 @@ function OrderEntryPanel({
   )
 }
 
-function ExploreMarketsStep({ state, dispatch }: Props) {
-  const hasEventContracts = state.selectedAccountTypes.includes('EVENT_CONTRACTS')
-  const hasStocks = state.selectedAccountTypes.includes('FINTECH_RETAIL') || state.selectedAccountTypes.includes('CRYPTO')
+function ExploreMarketsStep({ state, dispatch, demoMode }: Props) {
+  const isNewsReel = demoMode === 'news-reel'
+  const hasEventContracts = isNewsReel || state.selectedAccountTypes.includes('EVENT_CONTRACTS')
+  const hasStocks = !isNewsReel && (state.selectedAccountTypes.includes('FINTECH_RETAIL') || state.selectedAccountTypes.includes('CRYPTO'))
   const defaultTab = hasStocks ? 'stocks' : 'events'
   const [activeTab, setActiveTab] = useState<'stocks' | 'events'>(defaultTab)
   const [filledOrders, setFilledOrders] = useState<string[]>([])
@@ -848,7 +1005,7 @@ function ExploreMarketsStep({ state, dispatch }: Props) {
 
       {activeTab === 'events' && (
         <div className="market-list">
-          {EVENT_CONTRACTS_LIST.map((ec, i) => {
+          {(isNewsReel ? [OIL_EVENT_CONTRACT] : EVENT_CONTRACTS_LIST).map((ec, i) => {
             const isFilled = filledOrders.includes(ec.id)
             return (
               <div key={ec.id} className="event-card" style={{ '--i': i } as React.CSSProperties}>
@@ -886,16 +1043,19 @@ function ExploreMarketsStep({ state, dispatch }: Props) {
 
 // ─── Router ───
 
-export function AppSurface({ state, dispatch }: Props) {
+export function AppSurface({ state, dispatch, demoMode = 'mobile-app' }: Props) {
   const { currentStage } = state
 
   return (
     <section className="app-surface" id="app-surface" aria-label="Consumer app" tabIndex={-1}>
+      {currentStage === 'demo-setup' && <DemoSetupStep state={state} dispatch={dispatch} demoMode={demoMode} />}
       {currentStage === 'choose-accounts' && <ChooseAccountsStep state={state} dispatch={dispatch} />}
+      {currentStage === 'news-feed' && <NewsFeedStep state={state} dispatch={dispatch} />}
+      {currentStage === 'news-reel-disclosure' && <NewsReelDisclosureStep state={state} dispatch={dispatch} />}
       {currentStage === 'personal-info' && <PersonalInfoStep state={state} dispatch={dispatch} />}
       {currentStage === 'suitability' && <SuitabilityStep state={state} dispatch={dispatch} />}
       {currentStage === 'deposit-funds' && <DepositStep state={state} dispatch={dispatch} />}
-      {currentStage === 'explore-markets' && <ExploreMarketsStep state={state} dispatch={dispatch} />}
+      {currentStage === 'explore-markets' && <ExploreMarketsStep state={state} dispatch={dispatch} demoMode={demoMode} />}
     </section>
   )
 }

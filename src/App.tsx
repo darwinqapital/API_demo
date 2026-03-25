@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { StoryProgress } from './components/StoryProgress'
 import { AppSurface } from './components/AppSurface'
 import { ApiSequencePanel } from './components/ApiSequencePanel'
-import { type AppState, type DemoStage, INITIAL_STATE, STAGES, type ApiLogEntry } from './types/wedbush'
+import { type AppState, type DemoMode, type DemoStage, INITIAL_STATE, STAGES, NEWS_REEL_STAGES, type ApiLogEntry } from './types/wedbush'
 import type { Action } from './sim/scenarioEngine'
+import { THEME_PRESETS } from './data/mockSeeds'
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -32,6 +33,10 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, balance: action.balance }
     case 'SET_KYC_STATUS':
       return { ...state, kycStatus: action.status }
+    case 'SET_PARTNER_NAME':
+      return { ...state, partnerName: action.partnerName }
+    case 'SET_THEME_PRESET':
+      return { ...state, themePreset: action.themePreset }
     case 'SET_SELECTED_ACCOUNT_TYPES':
       return { ...state, selectedAccountTypes: action.types }
     case 'SET_PERSONAL_INFO':
@@ -39,7 +44,12 @@ function reducer(state: AppState, action: Action): AppState {
     case 'SET_SUITABILITY_INFO':
       return { ...state, suitabilityInfo: action.info }
     case 'RESET':
-      return INITIAL_STATE
+      return {
+        ...INITIAL_STATE,
+        currentStage: action.stage ?? INITIAL_STATE.currentStage,
+        partnerName: state.partnerName,
+        themePreset: state.themePreset,
+      }
     default:
       return state
   }
@@ -100,47 +110,96 @@ export function App() {
   const [authed, setAuthed] = useState(() => {
     try { return sessionStorage.getItem(PASS_KEY) === '1' } catch { return false }
   })
+  const [demoMode, setDemoMode] = useState<DemoMode>('mobile-app')
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const [announcement, setAnnouncement] = useState('')
   const prevCompletedRef = useRef(state.completedStages.length)
 
+  const startStageForMode = useCallback(
+    (mode: DemoMode): DemoStage => (mode === 'news-reel' ? 'news-feed' : 'choose-accounts'),
+    [],
+  )
+  const activeStages = demoMode === 'news-reel' ? NEWS_REEL_STAGES : STAGES
+  const showStoryProgress = state.currentStage !== 'demo-setup'
+  const activeTheme = THEME_PRESETS.find((preset) => preset.id === state.themePreset) ?? THEME_PRESETS[0]
+  const themeStyle = {
+    '--color-accent': activeTheme.accent,
+    '--color-accent-hover': activeTheme.accentHover,
+    '--color-accent-dim': activeTheme.accentDim,
+  } as CSSProperties
+
+  const handleModeChange = useCallback((mode: DemoMode) => {
+    setDemoMode(mode)
+    if (state.currentStage !== 'demo-setup') {
+      dispatch({ type: 'RESET', stage: startStageForMode(mode) })
+      setAnnouncement(`Switched to ${mode === 'news-reel' ? 'News Reel Demo' : 'Mobile App Journey'}.`)
+    }
+  }, [startStageForMode, state.currentStage])
+
   const handleReset = useCallback(() => {
-    dispatch({ type: 'RESET' })
-    setAnnouncement('Demo reset. Starting from step 1.')
-  }, [])
+    const stage = state.currentStage === 'demo-setup' ? 'demo-setup' : startStageForMode(demoMode)
+    dispatch({ type: 'RESET', stage })
+    setAnnouncement(stage === 'demo-setup' ? 'Demo setup reset.' : 'Demo reset. Starting from step 1.')
+  }, [demoMode, startStageForMode, state.currentStage])
 
   useEffect(() => {
     if (state.completedStages.length > prevCompletedRef.current) {
       const lastCompleted = state.completedStages[state.completedStages.length - 1]
-      const stageInfo = STAGES.find((s) => s.id === lastCompleted)
+      const stageInfo = activeStages.find((s) => s.id === lastCompleted)
       if (stageInfo) {
         setAnnouncement(`${stageInfo.label} completed successfully.`)
       }
     }
     prevCompletedRef.current = state.completedStages.length
-  }, [state.completedStages])
+  }, [state.completedStages, activeStages])
 
   if (!authed) {
     return <PasswordGate onUnlock={() => setAuthed(true)} />
   }
 
   return (
-    <div className="demo-layout">
+    <div className="demo-layout" style={themeStyle}>
       <a className="skip-link" href="#app-surface">Skip to content</a>
       <div className="sr-only" aria-live="polite" aria-atomic="true">{announcement}</div>
       <header className="demo-header">
-        <span className="demo-header__logo">Wedbush Pillar Platform Demo</span>
-        <StoryProgress
-          currentStage={state.currentStage}
-          completedStages={state.completedStages}
-          onStageClick={(stage) => dispatch({ type: 'SET_STAGE', stage })}
-        />
+        <div className="mode-toggle" role="radiogroup" aria-label="Demo mode">
+          <button
+            className={`mode-toggle__btn${demoMode === 'mobile-app' ? ' mode-toggle__btn--active' : ''}`}
+            onClick={() => handleModeChange('mobile-app')}
+            role="radio"
+            aria-checked={demoMode === 'mobile-app'}
+            type="button"
+          >
+            Mobile App Journey
+          </button>
+          <button
+            className={`mode-toggle__btn${demoMode === 'news-reel' ? ' mode-toggle__btn--active' : ''}`}
+            onClick={() => handleModeChange('news-reel')}
+            role="radio"
+            aria-checked={demoMode === 'news-reel'}
+            type="button"
+          >
+            News Reel Demo
+          </button>
+        </div>
+        <span className="demo-header__logo">
+          Wedbush Pillar Platform Demo
+          {state.partnerName.trim() ? ` - ${state.partnerName.trim()}` : ''}
+        </span>
+        {showStoryProgress && (
+          <StoryProgress
+            stages={activeStages}
+            currentStage={state.currentStage}
+            completedStages={state.completedStages}
+            onStageClick={(stage) => dispatch({ type: 'SET_STAGE', stage })}
+          />
+        )}
         <button className="demo-header__reset" onClick={handleReset} type="button">
           Reset Demo
         </button>
       </header>
       <div className="demo-body">
-        <AppSurface state={state} dispatch={dispatch} />
+        <AppSurface state={state} dispatch={dispatch} demoMode={demoMode} />
         <ApiSequencePanel entries={state.apiLog} />
       </div>
     </div>

@@ -1,3 +1,5 @@
+import type { ThemePresetId } from '../types/wedbush'
+
 export const MOCK_BANK = {
   bankName: 'National City Bank',
   accountType: 'CHECKING',
@@ -44,6 +46,32 @@ export const EVENT_CONTRACTS_LIST: EventContractInfo[] = [
   { id: 'ec-2', question: 'Will the Fed cut rates in June 2026?', category: 'Economy', yesPrice: '0.65', noPrice: '0.35', expiresAt: '2026-06-18' },
   { id: 'ec-3', question: 'Will TSLA reach $250 by Q3 2026?', category: 'Stocks', yesPrice: '0.28', noPrice: '0.72', expiresAt: '2026-09-30' },
   { id: 'ec-4', question: 'Will US GDP growth exceed 3% in 2026?', category: 'Economy', yesPrice: '0.38', noPrice: '0.62', expiresAt: '2026-12-31' },
+]
+
+export const OIL_EVENT_CONTRACT: EventContractInfo = {
+  id: 'ec-oil',
+  question: 'Will crude oil exceed $120 per barrel by Q3 2026?',
+  category: 'Commodities',
+  yesPrice: '0.72',
+  noPrice: '0.28',
+  expiresAt: '2026-09-30',
+}
+
+export interface ThemePreset {
+  id: ThemePresetId
+  label: string
+  accent: string
+  accentHover: string
+  accentDim: string
+}
+
+export const THEME_PRESETS: ThemePreset[] = [
+  { id: 'blue', label: 'Blue', accent: '#3478f6', accentHover: '#2563e6', accentDim: 'rgba(52, 120, 246, 0.12)' },
+  { id: 'emerald', label: 'Emerald', accent: '#059669', accentHover: '#047857', accentDim: 'rgba(5, 150, 105, 0.12)' },
+  { id: 'violet', label: 'Violet', accent: '#7c3aed', accentHover: '#6d28d9', accentDim: 'rgba(124, 58, 237, 0.12)' },
+  { id: 'rose', label: 'Rose', accent: '#e11d48', accentHover: '#be123c', accentDim: 'rgba(225, 29, 72, 0.12)' },
+  { id: 'orange', label: 'Orange', accent: '#ea580c', accentHover: '#c2410c', accentDim: 'rgba(234, 88, 12, 0.12)' },
+  { id: 'slate', label: 'Slate', accent: '#475569', accentHover: '#334155', accentDim: 'rgba(71, 85, 105, 0.12)' },
 ]
 
 export const DEMO_PERSONAL_INFO = {
