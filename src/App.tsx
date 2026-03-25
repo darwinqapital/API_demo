@@ -21,6 +21,8 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, isProcessing: action.value }
     case 'ADD_LOG':
       return { ...state, apiLog: [...state.apiLog, action.entry] }
+    case 'ADD_TRANSACTION':
+      return { ...state, transactions: [...state.transactions, action.transaction] }
     case 'SET_TOKEN':
       return { ...state, token: action.token }
     case 'SET_CLIENT_ID':

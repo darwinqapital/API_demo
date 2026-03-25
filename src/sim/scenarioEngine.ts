@@ -1,5 +1,5 @@
 import type { Dispatch } from 'react'
-import type { ApiLogEntry, DemoStage, AppState } from '../types/wedbush'
+import type { ApiLogEntry, DemoStage, AppState, Transaction } from '../types/wedbush'
 import {
   simulateAuth,
   simulateCreateClient,
@@ -7,15 +7,18 @@ import {
   simulateCreateAccounts,
   simulateDepositFunds,
   simulatePlaceOrder,
+  simulateGetTransactions,
   type OrderSizing,
 } from './apiSimulator'
 import { STAGES } from '../types/wedbush'
+import { uuid } from '../data/mockSeeds'
 
 export type Action =
   | { type: 'SET_STAGE'; stage: DemoStage }
   | { type: 'COMPLETE_STAGE'; stage: DemoStage }
   | { type: 'SET_PROCESSING'; value: boolean }
   | { type: 'ADD_LOG'; entry: ApiLogEntry }
+  | { type: 'ADD_TRANSACTION'; transaction: Transaction }
   | { type: 'SET_TOKEN'; token: string }
   | { type: 'SET_CLIENT_ID'; id: string }
   | { type: 'SET_ACCOUNT_IDS'; ids: Record<string, string> }
@@ -136,6 +139,21 @@ export async function runDeposit(
     )
     dispatch({ type: 'SET_PAYMENT_ACCOUNT_ID', id: result.paymentAccountId })
     dispatch({ type: 'SET_BALANCE', balance: result.balance })
+
+    const now = new Date().toISOString()
+    dispatch({
+      type: 'ADD_TRANSACTION',
+      transaction: {
+        id: uuid(),
+        type: 'DEPOSIT',
+        status: 'COMPLETED',
+        submittedDate: now,
+        completedDate: now,
+        amount: depositAmount,
+        currency: 'USD',
+      },
+    })
+
     dispatch({ type: 'COMPLETE_STAGE', stage: 'deposit-funds' })
     dispatch({ type: 'SET_STAGE', stage: 'explore-markets' })
   } finally {
@@ -163,6 +181,43 @@ export async function runPlaceOrder(
     const spent = parseFloat(result.cost)
     const newBalance = Math.max(0, currentBalance - spent).toFixed(2)
     dispatch({ type: 'SET_BALANCE', balance: newBalance })
+
+    const now = new Date().toISOString()
+    dispatch({
+      type: 'ADD_TRANSACTION',
+      transaction: {
+        id: result.orderId,
+        type: 'MARKET_BUY',
+        status: 'COMPLETED',
+        submittedDate: now,
+        completedDate: now,
+        instrumentIdentifiers: {
+          instrumentId: uuid(),
+          symbol,
+        },
+        enteredQuantity: result.shares,
+        filledQuantity: result.shares,
+        averagePrice: result.price,
+        currency: 'USD',
+      },
+    })
+
+    dispatch({ type: 'SET_STAGE', stage: 'transaction-history' })
+  } finally {
+    dispatch({ type: 'SET_PROCESSING', value: false })
+  }
+}
+
+export async function runViewTransactions(
+  dispatch: Dispatch<Action>,
+  state: AppState,
+) {
+  dispatch({ type: 'SET_PROCESSING', value: true })
+  try {
+    const accountId = Object.values(state.accountIds)[0]
+    if (accountId) {
+      await simulateGetTransactions(addLog(dispatch), accountId, state.transactions)
+    }
   } finally {
     dispatch({ type: 'SET_PROCESSING', value: false })
   }

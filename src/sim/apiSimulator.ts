@@ -1,4 +1,5 @@
-import type { ApiLogEntry, DemoStage, PersonalInfo, SuitabilityInfo, AccountTypeChoice } from '../types/wedbush'
+import type { ApiLogEntry, DemoStage, PersonalInfo, SuitabilityInfo, AccountTypeChoice, Transaction } from '../types/wedbush'
+import { isTradeTransaction } from '../types/wedbush'
 import { uuid, MOCK_BANK, DEPOSIT_AMOUNT } from '../data/mockSeeds'
 
 let logCounter = 0
@@ -379,4 +380,51 @@ export async function simulatePlaceOrder(
   }, 523))
 
   return { orderId, price, shares: fillQuantity, cost: fillCost }
+}
+
+// Step 7: Get Transactions
+export async function simulateGetTransactions(
+  addLog: (entry: ApiLogEntry) => void,
+  accountId: string,
+  transactions: Transaction[],
+) {
+  const wtsTransactions = transactions.map((tx) => {
+    if (!isTradeTransaction(tx)) {
+      return {
+        submittedDate: tx.submittedDate,
+        completedDate: tx.completedDate,
+        status: tx.status,
+        type: tx.type,
+        amount: tx.amount,
+        currency: tx.currency,
+      }
+    }
+    return {
+      submittedDate: tx.submittedDate,
+      completedDate: tx.completedDate,
+      status: tx.status,
+      type: tx.type,
+      instrumentIdentifiers: tx.instrumentIdentifiers,
+      enteredQuantity: tx.enteredQuantity,
+      filledQuantity: tx.filledQuantity,
+      averagePrice: tx.averagePrice,
+      currency: tx.currency,
+    }
+  })
+
+  await delay(350)
+  addLog(makeLog('transaction-history', 'GET', `/v1/accounts/${accountId}/transactions`, 'Retrieve paginated transaction history for account', 200, undefined, {
+    data: {
+      accountId,
+      transactions: wtsTransactions,
+    },
+    meta: {
+      pagination: {
+        page: 1,
+        limit: 25,
+        total: transactions.length,
+        totalPages: 1,
+      },
+    },
+  }, 124))
 }

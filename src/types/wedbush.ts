@@ -13,6 +13,7 @@ export type DemoStage =
   | 'suitability'
   | 'deposit-funds'
   | 'explore-markets'
+  | 'transaction-history'
 
 export interface StageInfo {
   id: DemoStage
@@ -26,6 +27,7 @@ export const STAGES: StageInfo[] = [
   { id: 'suitability', label: 'Suitability', description: 'Investment profile and KYC verification' },
   { id: 'deposit-funds', label: 'Fund Account', description: 'Deposit funds into your account' },
   { id: 'explore-markets', label: 'Explore', description: 'Browse stocks and event contracts' },
+  { id: 'transaction-history', label: 'History', description: 'View transaction history' },
 ]
 
 export const NEWS_REEL_STAGES: StageInfo[] = [
@@ -35,6 +37,7 @@ export const NEWS_REEL_STAGES: StageInfo[] = [
   { id: 'suitability', label: 'Suitability', description: 'Investment profile and KYC verification' },
   { id: 'deposit-funds', label: 'Fund Account', description: 'Deposit funds into your account' },
   { id: 'explore-markets', label: 'Explore', description: 'Browse event contracts' },
+  { id: 'transaction-history', label: 'History', description: 'View transaction history' },
 ]
 
 export interface ApiLogEntry {
@@ -108,6 +111,52 @@ export const EMPTY_SUITABILITY_INFO: SuitabilityInfo = {
   riskTolerance: '',
 }
 
+// Mirrors WTS GET /v1/accounts/{accountId}/transactions schema
+export type TransactionType =
+  | 'DEPOSIT'
+  | 'WITHDRAWAL'
+  | 'DIVIDEND'
+  | 'MARKET_BUY'
+  | 'MARKET_SELL'
+  | 'LIMIT_BUY'
+  | 'LIMIT_SELL'
+
+export type TransactionStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'REJECTED'
+
+export interface InstrumentIdentifiers {
+  instrumentId: string
+  cusip?: string
+  isin?: string
+  symbol: string
+}
+
+export interface BaseTransaction {
+  id: string
+  submittedDate: string
+  completedDate?: string
+  status: TransactionStatus
+  currency: string
+}
+
+export interface NonTradeTransaction extends BaseTransaction {
+  type: 'DEPOSIT' | 'WITHDRAWAL' | 'DIVIDEND'
+  amount: string
+}
+
+export interface TradeTransaction extends BaseTransaction {
+  type: 'MARKET_BUY' | 'MARKET_SELL' | 'LIMIT_BUY' | 'LIMIT_SELL'
+  instrumentIdentifiers: InstrumentIdentifiers
+  enteredQuantity: string
+  filledQuantity: string
+  averagePrice: string
+}
+
+export type Transaction = NonTradeTransaction | TradeTransaction
+
+export function isTradeTransaction(tx: Transaction): tx is TradeTransaction {
+  return ['MARKET_BUY', 'MARKET_SELL', 'LIMIT_BUY', 'LIMIT_SELL'].includes(tx.type)
+}
+
 export interface AppState {
   currentStage: DemoStage
   completedStages: DemoStage[]
@@ -127,6 +176,8 @@ export interface AppState {
   balance: string | null
 
   kycStatus: 'idle' | 'verifying' | 'approved' | 'denied'
+
+  transactions: Transaction[]
 }
 
 export const INITIAL_STATE: AppState = {
@@ -148,4 +199,6 @@ export const INITIAL_STATE: AppState = {
   balance: null,
 
   kycStatus: 'idle',
+
+  transactions: [],
 }

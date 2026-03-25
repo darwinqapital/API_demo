@@ -7,10 +7,12 @@ import {
   runSuitability,
   runDeposit,
   runPlaceOrder,
+  runViewTransactions,
   type Action,
 } from '../sim/scenarioEngine'
 import type { OrderSizing } from '../sim/apiSimulator'
 import type { AppState, DemoMode, DemoStage, AccountTypeChoice, PersonalInfo, SuitabilityInfo } from '../types/wedbush'
+import { isTradeTransaction, type Transaction } from '../types/wedbush'
 import {
   MOCK_BANK,
   DEPOSIT_AMOUNT,
@@ -939,10 +941,21 @@ function ExploreMarketsStep({ state, dispatch, demoMode }: Props) {
     )
   }
 
+  const hasTransactions = state.transactions.length > 0
+
   return (
     <PhoneFrame
       title="Explore Markets"
       subtitle={`Available: $${state.balance || '0.00'}`}
+      footer={hasTransactions ? (
+        <button
+          className="action-btn action-btn--secondary"
+          onClick={() => dispatch({ type: 'SET_STAGE', stage: 'transaction-history' })}
+          type="button"
+        >
+          View Transaction History
+        </button>
+      ) : undefined}
     >
       {(hasStocks && hasEventContracts) && (
         <div className="tab-bar" role="tablist">
@@ -1041,6 +1054,135 @@ function ExploreMarketsStep({ state, dispatch, demoMode }: Props) {
   )
 }
 
+// ─── Step 7: Transaction History ───
+
+const TX_TYPE_LABELS: Record<string, string> = {
+  DEPOSIT: 'Deposit',
+  WITHDRAWAL: 'Withdrawal',
+  DIVIDEND: 'Dividend',
+  MARKET_BUY: 'Market Buy',
+  MARKET_SELL: 'Market Sell',
+  LIMIT_BUY: 'Limit Buy',
+  LIMIT_SELL: 'Limit Sell',
+}
+
+function formatTxDate(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    + '\u00A0\u00B7\u00A0'
+    + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+}
+
+function TransactionRow({ tx }: { tx: Transaction }) {
+  const isTrade = isTradeTransaction(tx)
+  const typeLabel = TX_TYPE_LABELS[tx.type] ?? tx.type
+  const isDebit = tx.type === 'MARKET_BUY' || tx.type === 'LIMIT_BUY' || tx.type === 'WITHDRAWAL'
+
+  let amountDisplay: string
+  if (isTrade) {
+    const cost = (parseFloat(tx.filledQuantity) * parseFloat(tx.averagePrice)).toFixed(2)
+    amountDisplay = `${isDebit ? '\u2212' : '+'}$${cost}`
+  } else {
+    amountDisplay = `${tx.type === 'WITHDRAWAL' ? '\u2212' : '+'}$${tx.amount}`
+  }
+
+  return (
+    <div className="tx-row">
+      <div className="tx-row__icon" aria-hidden="true">
+        {isTrade ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+            <polyline points="17 6 23 6 23 12" />
+          </svg>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="12" y1="1" x2="12" y2="23" />
+            <polyline points="5 16 12 23 19 16" />
+          </svg>
+        )}
+      </div>
+      <div className="tx-row__details">
+        <div className="tx-row__primary">
+          <span className="tx-row__type">{typeLabel}</span>
+          {isTrade && (
+            <span className="tx-row__symbol">{tx.instrumentIdentifiers.symbol}</span>
+          )}
+        </div>
+        <div className="tx-row__secondary">
+          <span className="tx-row__date">{formatTxDate(tx.submittedDate)}</span>
+          {isTrade && (
+            <span className="tx-row__qty">
+              {tx.filledQuantity}\u00A0{parseFloat(tx.filledQuantity) === 1 ? 'share' : 'shares'} @ ${tx.averagePrice}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="tx-row__right">
+        <span className={`tx-row__amount ${isDebit ? 'tx-row__amount--debit' : 'tx-row__amount--credit'}`}>
+          {amountDisplay}
+        </span>
+        <span className={`tx-row__status tx-row__status--${tx.status.toLowerCase()}`}>
+          {tx.status.charAt(0) + tx.status.slice(1).toLowerCase()}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function TransactionHistoryStep({ state, dispatch }: Props) {
+  const hasTransactions = state.transactions.length > 0
+  const hasFetched = useRef(false)
+
+  useEffect(() => {
+    if (!hasFetched.current && hasTransactions) {
+      hasFetched.current = true
+      runViewTransactions(dispatch, state)
+    }
+  }, [])// eslint-disable-line react-hooks/exhaustive-deps
+
+  const sortedTransactions = [...state.transactions].reverse()
+
+  return (
+    <PhoneFrame
+      title="Transaction History"
+      subtitle={hasTransactions ? `${state.transactions.length} transaction${state.transactions.length !== 1 ? 's' : ''}` : undefined}
+      onBack={() => dispatch({ type: 'SET_STAGE', stage: 'explore-markets' })}
+      footer={
+        hasTransactions ? (
+          <button
+            className="action-btn"
+            onClick={() => dispatch({ type: 'SET_STAGE', stage: 'explore-markets' })}
+            type="button"
+          >
+            Back to Markets
+          </button>
+        ) : undefined
+      }
+    >
+      {!hasTransactions ? (
+        <div className="tx-empty">
+          <div className="tx-empty__icon" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="2" y="5" width="20" height="14" rx="2" />
+              <line x1="2" y1="10" x2="22" y2="10" />
+            </svg>
+          </div>
+          <p className="tx-empty__title">No transactions yet</p>
+          <p className="tx-empty__desc">
+            Deposit funds and place trades to see your history here.
+          </p>
+        </div>
+      ) : (
+        <div className="tx-list" role="list" aria-label="Transaction history">
+          {sortedTransactions.map((tx) => (
+            <TransactionRow key={tx.id} tx={tx} />
+          ))}
+        </div>
+      )}
+    </PhoneFrame>
+  )
+}
+
 // ─── Router ───
 
 export function AppSurface({ state, dispatch, demoMode = 'mobile-app' }: Props) {
@@ -1056,6 +1198,7 @@ export function AppSurface({ state, dispatch, demoMode = 'mobile-app' }: Props) 
       {currentStage === 'suitability' && <SuitabilityStep state={state} dispatch={dispatch} />}
       {currentStage === 'deposit-funds' && <DepositStep state={state} dispatch={dispatch} />}
       {currentStage === 'explore-markets' && <ExploreMarketsStep state={state} dispatch={dispatch} demoMode={demoMode} />}
+      {currentStage === 'transaction-history' && <TransactionHistoryStep state={state} dispatch={dispatch} />}
     </section>
   )
 }
