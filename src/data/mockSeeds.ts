@@ -60,18 +60,89 @@ export const OIL_EVENT_CONTRACT: EventContractInfo = {
 export interface ThemePreset {
   id: ThemePresetId
   label: string
+  bg: string
+  surface: string
+  surfaceRaised: string
+  border: string
+  borderSubtle: string
   accent: string
   accentHover: string
   accentDim: string
 }
 
 export const THEME_PRESETS: ThemePreset[] = [
-  { id: 'blue', label: 'Blue', accent: '#3478f6', accentHover: '#2563e6', accentDim: 'rgba(52, 120, 246, 0.12)' },
-  { id: 'emerald', label: 'Emerald', accent: '#059669', accentHover: '#047857', accentDim: 'rgba(5, 150, 105, 0.12)' },
-  { id: 'violet', label: 'Violet', accent: '#7c3aed', accentHover: '#6d28d9', accentDim: 'rgba(124, 58, 237, 0.12)' },
-  { id: 'rose', label: 'Rose', accent: '#e11d48', accentHover: '#be123c', accentDim: 'rgba(225, 29, 72, 0.12)' },
-  { id: 'orange', label: 'Orange', accent: '#ea580c', accentHover: '#c2410c', accentDim: 'rgba(234, 88, 12, 0.12)' },
-  { id: 'slate', label: 'Slate', accent: '#475569', accentHover: '#334155', accentDim: 'rgba(71, 85, 105, 0.12)' },
+  {
+    id: 'blue',
+    label: 'Blue',
+    bg: '#f3f7ff',
+    surface: '#ffffff',
+    surfaceRaised: '#f7faff',
+    border: '#d8e4fb',
+    borderSubtle: '#e7eefb',
+    accent: '#3478f6',
+    accentHover: '#2563e6',
+    accentDim: 'rgba(52, 120, 246, 0.12)',
+  },
+  {
+    id: 'emerald',
+    label: 'Emerald',
+    bg: '#f1faf6',
+    surface: '#ffffff',
+    surfaceRaised: '#f5fcf8',
+    border: '#d2eadf',
+    borderSubtle: '#e3f2eb',
+    accent: '#059669',
+    accentHover: '#047857',
+    accentDim: 'rgba(5, 150, 105, 0.12)',
+  },
+  {
+    id: 'violet',
+    label: 'Violet',
+    bg: '#f7f4ff',
+    surface: '#ffffff',
+    surfaceRaised: '#faf8ff',
+    border: '#e3daf8',
+    borderSubtle: '#eee8fb',
+    accent: '#7c3aed',
+    accentHover: '#6d28d9',
+    accentDim: 'rgba(124, 58, 237, 0.12)',
+  },
+  {
+    id: 'rose',
+    label: 'Rose',
+    bg: '#fff4f7',
+    surface: '#ffffff',
+    surfaceRaised: '#fff7f9',
+    border: '#f6d9e2',
+    borderSubtle: '#fae7ed',
+    accent: '#e11d48',
+    accentHover: '#be123c',
+    accentDim: 'rgba(225, 29, 72, 0.12)',
+  },
+  {
+    id: 'orange',
+    label: 'Orange',
+    bg: '#fff7f1',
+    surface: '#ffffff',
+    surfaceRaised: '#fffaf6',
+    border: '#f5dfce',
+    borderSubtle: '#faebdf',
+    accent: '#ea580c',
+    accentHover: '#c2410c',
+    accentDim: 'rgba(234, 88, 12, 0.12)',
+  },
+  {
+    id: 'slate',
+    label: 'Slate',
+    bg: '#f4f6f8',
+    surface: '#ffffff',
+    surfaceRaised: '#f8fafb',
+    border: '#dbe2e8',
+    borderSubtle: '#e7edf2',
+    accent: '#475569',
+    accentHover: '#334155',
+    accentDim: 'rgba(71, 85, 105, 0.12)',
+  },
 ]
 
 export const DEMO_PERSONAL_INFO = {

@@ -123,6 +123,11 @@ export function App() {
   const showStoryProgress = state.currentStage !== 'demo-setup'
   const activeTheme = THEME_PRESETS.find((preset) => preset.id === state.themePreset) ?? THEME_PRESETS[0]
   const themeStyle = {
+    '--color-bg': activeTheme.bg,
+    '--color-surface': activeTheme.surface,
+    '--color-surface-raised': activeTheme.surfaceRaised,
+    '--color-border': activeTheme.border,
+    '--color-border-subtle': activeTheme.borderSubtle,
     '--color-accent': activeTheme.accent,
     '--color-accent-hover': activeTheme.accentHover,
     '--color-accent-dim': activeTheme.accentDim,
