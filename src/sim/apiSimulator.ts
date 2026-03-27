@@ -338,7 +338,7 @@ export async function simulatePlaceOrder(
   let description: string
 
   if (sizing.mode === 'notional') {
-    fillQuantity = (parseFloat(sizing.value) / priceNum).toFixed(6)
+    fillQuantity = (parseFloat(sizing.value) / priceNum).toFixed(5)
     fillCost = sizing.value
     description = `Place $${sizing.value} market buy order for ${symbol}`
   } else {

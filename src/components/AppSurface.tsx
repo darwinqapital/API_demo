@@ -103,6 +103,10 @@ function formatDisclosureCopy(partnerName: string) {
   return disclosureSample.split('[Insert Platform Name]').join(platformName)
 }
 
+function formatShareQuantity(quantity: string | number): string {
+  return Number(quantity).toFixed(5)
+}
+
 function DemoSetupStep({ state, dispatch, demoMode = 'mobile-app' }: Props) {
   const [submitted, setSubmitted] = useState(false)
   const partnerName = state.partnerName
@@ -731,7 +735,7 @@ function OrderEntryPanel({
     const qty = amountNum / price
     estimatedCost = amountNum
     if (isEquity) {
-      estimateLabel = `~${qty.toFixed(4)}\u00A0shares`
+      estimateLabel = `~${formatShareQuantity(qty)}\u00A0shares`
     } else {
       estimateLabel = `~${Math.floor(qty)}\u00A0contracts`
     }
@@ -762,7 +766,7 @@ function OrderEntryPanel({
     } else {
       const val = mode === 'contracts'
         ? String(Math.floor(amountNum))
-        : parseFloat(amount).toFixed(6)
+        : parseFloat(amount).toFixed(5)
       onSubmit({ mode: 'quantity', value: val })
     }
   }
@@ -831,7 +835,7 @@ function OrderEntryPanel({
             inputMode={mode === 'contracts' ? 'numeric' : 'decimal'}
             value={amount}
             onChange={(e) => handleAmountChange(e.target.value)}
-            placeholder={mode === 'dollars' ? '0.00' : mode === 'shares' ? '0.0000' : '0'}
+            placeholder={mode === 'dollars' ? '0.00' : mode === 'shares' ? '0.00000' : '0'}
             autoComplete="off"
             spellCheck={false}
             disabled={isProcessing}
@@ -1112,7 +1116,9 @@ function TransactionRow({ tx }: { tx: Transaction }) {
           <span className="tx-row__date">{formatTxDate(tx.submittedDate)}</span>
           {isTrade && (
             <span className="tx-row__qty">
-              {tx.filledQuantity}\u00A0{parseFloat(tx.filledQuantity) === 1 ? 'share' : 'shares'} @ ${tx.averagePrice}
+              {formatShareQuantity(tx.filledQuantity)}
+              {' '}
+              {parseFloat(tx.filledQuantity) === 1 ? 'share' : 'shares'} @ ${tx.averagePrice}
             </span>
           )}
         </div>
